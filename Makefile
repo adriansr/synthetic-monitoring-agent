@@ -12,6 +12,7 @@ PLATFORMS     := $(sort \
     linux/arm \
     linux/arm64 \
 )
+$(warning XXX ${PLATFORMS})
 
 BUILD_VERSION := $(shell $(ROOTDIR)/scripts/version)
 BUILD_COMMIT  := $(shell git rev-parse HEAD^{commit})
