@@ -6,13 +6,7 @@ ROOTDIR       := $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 DISTDIR       := $(abspath $(ROOTDIR)/dist)
 HOST_OS       := $(shell go env GOOS)
 HOST_ARCH     := $(shell go env GOARCH)
-PLATFORMS     := $(sort \
-    $(HOST_OS)/$(HOST_ARCH) \
-    linux/amd64 \
-    linux/arm \
-    linux/arm64 \
-)
-$(warning XXX ${PLATFORMS})
+PLATFORMS     := $(sort $(HOST_OS)/$(HOST_ARCH) linux/amd64 linux/arm linux/arm64)
 
 BUILD_VERSION := $(shell $(ROOTDIR)/scripts/version)
 BUILD_COMMIT  := $(shell git rev-parse HEAD^{commit})
@@ -81,19 +75,17 @@ deps: deps-go ## Install all dependencies.
 ##@ Building
 
 define build_go_template
-BUILD_OS=$(word 1,$(subst /, ,$(1)))
-BUILD_ARCH=$(word 2,$(subst /, ,$(1)))
-BUILD_GO_TARGETS += build-go-$(BUILD_OS)-$(BUILD_ARCH)-$(2)
+BUILD_GO_TARGETS += build-go-$(1)-$(2)-$(3)
 
-build-go-$(BUILD_OS)-$(BUILD_ARCH)-$(2) : GOOS := $(BUILD_OS)
-build-go-$(BUILD_OS)-$(BUILD_ARCH)-$(2) : GOARCH := $(BUILD_ARCH)
-build-go-$(BUILD_OS)-$(BUILD_ARCH)-$(2) : GOPKG := $(2)
+build-go-$(1)-$(2)-$(3) : GOOS := $(1)
+build-go-$(1)-$(2)-$(3) : GOARCH := $(2)
+build-go-$(1)-$(2)-$(3) : GOPKG := $(3)
 
 endef
 
 $(foreach BUILD_PLATFORM,$(PLATFORMS), \
 	$(foreach CMD,$(COMMANDS), \
-		$(eval $(call build_go_template,${BUILD_PLATFORM},$(CMD)))))
+		$(eval $(call build_go_template,$(word 1,$(subst /, ,$(BUILD_PLATFORM))),$(word 2,$(subst /, ,$(BUILD_PLATFORM))),$(CMD)))))
 
 BUILD_GO_NATIVE_TARGETS := $(filter build-go-$(HOST_OS)-$(HOST_ARCH)-%, $(BUILD_GO_TARGETS))
 
