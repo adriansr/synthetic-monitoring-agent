@@ -800,7 +800,7 @@ func (c *Updater) addAndStartScraperWithLock(ctx context.Context, check sm.Check
 
 	c.scrapers[check.Id] = scraper
 
-	go scraper.Run(ctx)
+	//go scraper.Run(ctx)
 
 	c.metrics.runningScrapers.WithLabelValues(checkType).Inc()
 

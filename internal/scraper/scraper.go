@@ -186,7 +186,7 @@ func (s *Scraper) Run(ctx context.Context) {
 
 		var err error
 		payload, err = s.collectData(ctx, t)
-
+		payload = nil
 		switch {
 		case errors.Is(err, errCheckFailed):
 			s.errorCounter.WithLabelValues("check").Inc()

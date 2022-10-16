@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/grafana/synthetic-monitoring-agent/internal/prober/dns"
-	"github.com/grafana/synthetic-monitoring-agent/internal/prober/http"
 	"github.com/grafana/synthetic-monitoring-agent/internal/prober/icmp"
 	"github.com/grafana/synthetic-monitoring-agent/internal/prober/k6"
 	"github.com/grafana/synthetic-monitoring-agent/internal/prober/logger"
@@ -25,6 +24,16 @@ func Run(ctx context.Context, p Prober, target string, registry *prometheus.Regi
 	return p.Probe(ctx, target, registry, logger)
 }
 
+type fakeProber string
+
+func (f fakeProber) Name() string {
+	return string(f)
+}
+
+func (f fakeProber) Probe(ctx context.Context, target string, registry *prometheus.Registry, logger logger.Logger) bool {
+	return true
+}
+
 func NewFromCheck(ctx context.Context, logger zerolog.Logger, check sm.Check) (Prober, string, error) {
 	var (
 		p      Prober
@@ -38,7 +47,8 @@ func NewFromCheck(ctx context.Context, logger zerolog.Logger, check sm.Check) (P
 		target = check.Target
 
 	case sm.CheckTypeHttp:
-		p, err = http.NewProber(ctx, check, logger)
+		//p, err = http.NewProber(ctx, check, logger)
+		p = fakeProber("http")
 		target = check.Target
 
 	case sm.CheckTypeDns:
