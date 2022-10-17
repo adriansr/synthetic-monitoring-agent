@@ -101,7 +101,7 @@ func (s *ChecksServer) RegisterProbe(ctx context.Context, _ *sm.ProbeInfo) (*sm.
 	return &sm.RegisterProbeResult{Probe: *probe}, nil
 }
 
-func (s *ChecksServer) GetChanges(_ *sm.Void, stream sm.Checks_GetChangesServer) error {
+func (s *ChecksServer) GetChanges( /*TODO*/ _ *sm.ProbeState, stream sm.Checks_GetChangesServer) error {
 	probeID, found := probeIdFromContext(stream.Context())
 	if !found {
 		return errors.New("invalid probe authorization")

@@ -398,7 +398,22 @@ func (c *Updater) loop(ctx context.Context) (bool, error) {
 		}
 	}
 
-	cc, err := client.GetChanges(sigCtx, &sm.Void{})
+	knownChecks := sm.ProbeState{
+		Checks: make([]sm.Entity, 0, len(c.scrapers)),
+	}
+	counter := 0
+	for cID, scraper := range c.scrapers {
+		if counter++; counter%10 != 0 {
+			knownChecks.Checks = append(knownChecks.Checks, sm.Entity{
+				Id:       cID, // TODO: Not name
+				Modified: scraper.LastModified(),
+			})
+		}
+	}
+	// TODO: c.Tenants
+
+	logger.Error().Int("n", len(knownChecks.Checks)).Int("size", knownChecks.Size()).Msg("XXX sending current state")
+	cc, err := client.GetChanges(sigCtx, &knownChecks)
 	if err != nil {
 		return connected, errorHandler(err, "requesting changes from synthetic-monitoring-api", signalFired)
 	}
@@ -728,11 +743,11 @@ func (c *Updater) handleInitialChangeAddWithLock(ctx context.Context, check sm.C
 }
 
 func (c *Updater) handleChangeBatch(ctx context.Context, changes *sm.Changes, firstBatch bool) {
-	if firstBatch {
+	if firstBatch && (len(changes.DeltaFirstBatch) == 0 || changes.DeltaFirstBatch[0] == false) {
 		c.handleFirstBatch(ctx, changes)
 		return
 	}
-
+	c.logger.Error().Int("changes", len(changes.Checks)).Int("tenants", len(changes.Tenants)).Int("size", changes.Size()).Bool("first", firstBatch).Msg("XXX got change batch")
 	for _, tenant := range changes.Tenants {
 		c.tenantCh <- tenant
 	}
