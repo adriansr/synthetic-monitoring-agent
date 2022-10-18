@@ -58,13 +58,13 @@ message Void {
 }
 
 message ProbeState {
-	repeated Entity checks  = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "checks"]; // TODO
-	repeated Entity tenants = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "tenants"]; // TODO
+	repeated EntityRef checks  = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "checks"];
+	repeated EntityRef tenants = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "tenants"];
 }
 
-message Entity {
-	int64  id       = 1 [(gogoproto.jsontag) = "id"];
-	double modified = 2 [(gogoproto.jsontag) = "version"];
+message EntityRef {
+	int64  id           = 1 [(gogoproto.jsontag) = "id"];
+	double lastModified = 2 [(gogoproto.jsontag) = "lastModified"];
 }
 
 message ProbeInfo {
@@ -193,9 +193,9 @@ message CheckChange {
 // When a tenant's credentials change, this message will contain the new
 // information for that tenant.
 message Changes {
-	repeated CheckChange checks          = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "checks"];
-	repeated Tenant      tenants         = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "tenants"];
-	repeated bool        deltaFirstBatch = 3 [(gogoproto.jsontag) = "deltaFirstBatch"];
+	repeated CheckChange checks            = 1 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "checks"];
+	repeated Tenant      tenants           = 2 [(gogoproto.nullable) = false, (gogoproto.jsontag) = "tenants"];
+	repeated bool        isDeltaFirstBatch = 3 [(gogoproto.jsontag) = "isDeltaFirstBatch"];
 }
 
 message AdHocRequest {

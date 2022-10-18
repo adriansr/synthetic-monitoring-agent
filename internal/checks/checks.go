@@ -399,16 +399,14 @@ func (c *Updater) loop(ctx context.Context) (bool, error) {
 	}
 
 	knownChecks := sm.ProbeState{
-		Checks: make([]sm.Entity, 0, len(c.scrapers)),
+		Checks: make([]sm.EntityRef, 0, len(c.scrapers)),
 	}
-	counter := 0
+
 	for cID, scraper := range c.scrapers {
-		if counter++; counter%10 != 0 {
-			knownChecks.Checks = append(knownChecks.Checks, sm.Entity{
-				Id:       cID, // TODO: Not name
-				Modified: scraper.LastModified(),
-			})
-		}
+		knownChecks.Checks = append(knownChecks.Checks, sm.EntityRef{
+			Id:           cID,
+			LastModified: scraper.LastModified(),
+		})
 	}
 	// TODO: c.Tenants
 
@@ -652,7 +650,7 @@ func (c *Updater) handleCheckDelete(ctx context.Context, check sm.Check) error {
 // to ensure this.
 func (c *Updater) handleFirstBatch(ctx context.Context, changes *sm.Changes) {
 	newChecks := make(map[int64]struct{})
-
+	c.logger.Error().Int("changes", len(changes.Checks)).Int("tenants", len(changes.Tenants)).Int("size", changes.Size()).Msg("XXX ERROR HANDLEFIRSTBATCH should not be called")
 	c.scrapersMutex.Lock()
 	defer c.scrapersMutex.Unlock()
 
@@ -742,8 +740,12 @@ func (c *Updater) handleInitialChangeAddWithLock(ctx context.Context, check sm.C
 	return nil
 }
 
+func isDeltaFirstChange(changes *sm.Changes) bool {
+	return len(changes.IsDeltaFirstBatch) > 0 && changes.IsDeltaFirstBatch[0]
+}
+
 func (c *Updater) handleChangeBatch(ctx context.Context, changes *sm.Changes, firstBatch bool) {
-	if firstBatch && (len(changes.DeltaFirstBatch) == 0 || changes.DeltaFirstBatch[0] == false) {
+	if firstBatch && !isDeltaFirstChange(changes) {
 		c.handleFirstBatch(ctx, changes)
 		return
 	}
