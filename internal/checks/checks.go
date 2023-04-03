@@ -5,13 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"os/signal"
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/prometheus/prompb"
+	"github.com/rs/zerolog"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/grafana/synthetic-monitoring-agent/internal/feature"
 	"github.com/grafana/synthetic-monitoring-agent/internal/pkg/logproto"
@@ -20,13 +25,6 @@ import (
 	"github.com/grafana/synthetic-monitoring-agent/internal/version"
 	"github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
 	sm "github.com/grafana/synthetic-monitoring-agent/pkg/pb/synthetic_monitoring"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/prometheus/prompb"
-	"github.com/rs/zerolog"
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type Error string
@@ -494,39 +492,6 @@ func ping(ctx context.Context, client synthetic_monitoring.ChecksClient) error {
 			req.Sequence++
 		}
 	}
-}
-
-// installSignalHandler installs a signal handler for SIGUSR1.
-//
-// The returned context's Done channel is closed if the signal is
-// delivered. To make it simpler to determine if the signal was
-// delivered, a value of 1 is written to the location pointed to by the
-// returned int32 pointer.
-//
-// If the provided context's Done channel is closed before the signal is
-// delivered, the signal handler is removed and the returned context's
-// Done channel is closed, too. It's the callers responsibility to
-// cancel the provided context if it's no longer interested in the
-// signal.
-func installSignalHandler(ctx context.Context) (context.Context, *int32) {
-	sigCtx, cancel := context.WithCancel(ctx)
-
-	fired := new(int32)
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGUSR1)
-
-	go func() {
-		select {
-		case <-sigCh:
-			atomic.StoreInt32(fired, 1)
-			cancel()
-		case <-ctx.Done():
-		}
-		signal.Stop(sigCh)
-	}()
-
-	return sigCtx, fired
 }
 
 func (c *Updater) processChanges(ctx context.Context, cc sm.Checks_GetChangesClient) error {
